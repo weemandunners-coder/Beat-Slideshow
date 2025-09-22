@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beat Slideshow</title>
+<style>
+  body { font-family: sans-serif; text-align: center; padding: 20px; }
+  #display img, #display video { max-width: 100%; max-height: 50vh; margin-top: 20px; }
+  button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<div id="menu">
+  <h1>Beat Slideshow</h1>
+  <label for="bpm">BPM:</label>
+  <input type="number" id="bpm" value="120" min="40" max="240"><br><br>
+
+  <input type="file" id="media" multiple accept="image/*,video/*"><br><br>
+
+  <button onclick="startSlideshow()">Play</button>
+</div>
+
+<div id="display"></div>
+<button id="stopBtn" onclick="stopSlideshow()" style="display:none;">Stop / Main Menu</button>
+
+<audio id="click" src="metronome_click.mp3"></audio>
+
+<script>
+let files = [];
+let currentIndex = 0;
+let intervalId;
+
+// Handle file selection
+document.getElementById('media').addEventListener('change', (e) => {
+  files = Array.from(e.target.files);
+});
+
+// Start the slideshow
+function startSlideshow() {
+  if (!files.length) {
+    alert("Please add media first!");
+    return;
+  }
+
+  const bpm = document.getElementById('bpm').value;
+  const interval = 60000 / bpm; // milliseconds per beat
+  const display = document.getElementById('display');
+
+  // Hide menu, show stop button
+  document.getElementById('menu').style.display = 'none';
+  document.getElementById('stopBtn').style.display = 'inline-block';
+
+  intervalId = setInterval(() => {
+    const file = files[currentIndex];
+    const url = URL.createObjectURL(file);
+
+    if (file.type.startsWith('video/')) {
+      display.innerHTML = `<video src="${url}" autoplay muted loop></video>`;
+    } else {
+      display.innerHTML = `<img src="${url}">`;
+    }
+
+    document.getElementById('click').play();
+    currentIndex = (currentIndex + 1) % files.length;
+  }, interval);
+}
+
+// Stop the slideshow and go back to menu
+function stopSlideshow() {
+  clearInterval(intervalId);
+  currentIndex = 0;
+  document.getElementById('display').innerHTML = '';
+  document.getElementById('menu').style.display = 'block';
+  document.getElementById('stopBtn').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
