@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beat Slideshow</title>
+<style>
+  body { font-family: sans-serif; text-align: center; padding: 20px; }
+  #display { position: relative; height: 50vh; }
+  #display img, #display video {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+  }
+  button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<div id="menu">
+  <h1>Beat Slideshow</h1>
+  <label for="bpm">BPM:</label>
+  <input type="number" id="bpm" value="120" min="40" max="240"><br><br>
+
+  <input type="file" id="media" multiple accept="image/*,video/*"><br><br>
+
+  <button onclick="startSlideshow()">Play</button>
+</div>
+
+<div id="display"></div>
+<button id="stopBtn" onclick="stopSlideshow()" style="display:none;">Stop / Main Menu</button>
+
+<audio id="click" src="metronome_click.mp3"></audio>
+
+<script>
+let files = [];
+let currentIndex = 0;
+let slideshowTimeout;
+let metronomeInterval;
+
+// Handle file selection
+document.getElementById('media').addEventListener('change', (e) => {
+  files = Array.from(e.target.files);
+});
+
+// Start slideshow
+function startSlideshow() {
+  if (!files.length) {
+    alert("Please add media first!");
+    return;
+  }
+
+  const bpm = document.getElementById('bpm').value;
+  const metronomeIntervalTime = 60000 / bpm;
+  const display = document.getElementById('display');
+
+  document.getElementById('menu').style.display = 'none';
+  document.getElementById('stopBtn').style.display = 'inline-block';
+
+  // Metronome timer
+  metronomeInterval = setInterval(() => {
+    document.getElementById('click').play();
+  }, metronomeIntervalTime);
+
+  // Start slideshow
+  showNextMedia();
+}
+
+// Show next media with fade
+function showNextMedia() {
+  const display = document.getElementById('display');
+  const file = files[currentIndex];
+  const url = URL.createObjectURL(file);
+
+  let element;
+  if (file.type.startsWith('video/')) {
+    element = document.createElement('video');
+    element.src = url;
+    element.autoplay = true;
+    element.muted = true;
+    element.controls = false;
+  } else {
+    element = document.createElement('img');
+    element.src = url;
+  }
+
+  element.style.opacity = 0;
+  element.style.position = 'absolute';
+  element.style.top = '0';
+  element.style.left = '0';
+  element.style.width = '100%';
+  element.style.height = '100%';
+  element.style.objectFit = 'contain';
+  element.style.transition = 'opacity 0.5s ease-in-out';
+
+  // Add new element on top
+  display.appendChild(element);
+
+  // Trigger fade in
+  requestAnimationFrame(() => {
+    element.style.opacity = 1;
+  });
+
+  // Fade out and remove previous element after 0.5s
+  if (display.children.length > 1) {
+    const old = display.children[0];
+    old.style.opacity = 0;
+    setTimeout(() => display.removeChild(old), 500);
+  }
+
+  // Move to next media after 2.5 seconds or when video ends
+  const duration = file.type.startsWith('video/') ? Math.min(2500, 2500) : 2500; // fixed 2.5s for now
+  slideshowTimeout = setTimeout(() => {
+    if (file.type.startsWith('video/')) element.pause();
+    currentIndex = (currentIndex + 1) % files.length;
+    showNextMedia();
+  }, duration);
+}
+
+// Stop slideshow
+function stopSlideshow() {
+  clearInterval(metronomeInterval);
+  clearTimeout(slideshowTimeout);
+  currentIndex = 0;
+  const display = document.getElementById('display');
+  display.innerHTML = '';
+  document.getElementById('menu').style.display = 'block';
+  document.getElementById('stopBtn').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
